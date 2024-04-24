@@ -91,20 +91,22 @@ const MAIN = {
             frame.faces_vertices
         );
         FOLD.FO = frame.faceOrders;
-        FOLD.Vf = frame["vertices_lf:coords"];
         const STATE = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
+        FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, STATE.edges);
+        FOLD.Vf = frame["vertices_lf:coords"] ??
+            M.normalize_points(X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0]);
         return [FOLD, CELL, STATE];
     },
     draw_frame: (FILE) => {
         const [F1, C1, S1] = MAIN.get_frame(FILE, FILE.i);
         MAIN.draw_state(SVG.clear("input"), F1, C1, S1);
-        MAIN.draw_cp(SVG.clear("cp_in"), F1, S1);
+        MAIN.draw_cp(SVG.clear("cp_in"), F1);
         const out = SVG.clear("output");
         const cp_out = SVG.clear("cp_out");
         if (FILE.i < FILE.file_frames.length - 1) {
             const [F2, C2, S2] = MAIN.get_frame(FILE, FILE.i + 1);
             MAIN.draw_state(out, F2, C2, S2);
-            MAIN.draw_cp(cp_out, F2, S2);
+            MAIN.draw_cp(cp_out, F2);
         }
     },
     EF_Ff_edges_2_EA: (EF, Ff, edges) => {
@@ -117,9 +119,9 @@ const MAIN = {
             return "F";
         });
     },
-    draw_cp: (svg, F, S) => {
-        const {V, Vf, FV, EV, EF, Ff, FO, FOO, FM} = F;
-        const EA = MAIN.EF_Ff_edges_2_EA(EF, Ff, S.edges);
+    draw_cp: (svg, F) => {
+        console.log(F);
+        const {V, Vf, FV, EV, EF, EA, Ff, FO} = F;
         const faces = FV.map(F => M.expand(F, Vf));
         const lines = EV.map(E => M.expand(E, Vf));
         const colors = EA.map(a => {
