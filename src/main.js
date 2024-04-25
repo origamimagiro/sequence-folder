@@ -83,7 +83,7 @@ const MAIN = {
             FILE.i = Math.max(FILE.i - 1, 0);
             MAIN.draw_frame(FILE);
         };
-        console.log(FILE);
+        // console.log(FILE);
     },
     get_frame: (FILE, i) => {
         const frame = FILE.file_frames[i];
@@ -95,11 +95,16 @@ const MAIN = {
         FOLD.FO = frame.faceOrders;
         const STATE = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
         FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, STATE.edges);
-        FOLD.Vf = M.normalize_points(
-            X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0]);
+        FOLD.Vf = X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0];
         if (M.polygon_area2(M.expand(FOLD.FV[0], FOLD.Vf)) < 0) {
             FOLD.Vf = FOLD.Vf.map(v => M.add(M.refY(v), [0, 1]));
         }
+        const v0 = FOLD.Vf[0];
+        FOLD.Vf = FOLD.Vf.map(p => M.sub(p, v0));
+        const [c1, s1] = FOLD.Vf[1];
+        FOLD.Vf = FOLD.Vf.map(p => M.rotate_cos_sin(p, c1, -s1));
+        FOLD.Vf = FOLD.Vf.map(p => M.rotate_cos_sin(p, 0, 1));
+        FOLD.Vf = M.normalize_points(FOLD.Vf);
         return [FOLD, CELL, STATE];
     },
     draw_frame: (FILE) => {
@@ -125,7 +130,7 @@ const MAIN = {
         });
     },
     draw_cp: (svg, F, bold = true) => {
-        console.log(F);
+        // console.log(F);
         const {V, Vf, FV, EV, EF, EA, Ff, FO, FL} = F;
         const faces = FV.map(F => M.expand(F, Vf));
         const lines = EV.map(E => M.expand(E, Vf));
@@ -155,7 +160,7 @@ const MAIN = {
                 },
             });
         }
-        SVG.draw_points(g3, Vf, {text: true, fill: "green"});
+        // SVG.draw_points(g3, Vf, {text: true, fill: "green"});
     },
     draw_state: (svg, FOLD, CELL, STATE) => {
         const {Ff, EF} = FOLD;
