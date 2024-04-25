@@ -93,6 +93,8 @@ const MAIN = {
         );
         FOLD.FL = frame["faces_lf:group"];
         FOLD.FO = frame.faceOrders;
+        FOLD.line = frame["lf:line"];
+        FOLD.points = frame["lf:points"];
         const STATE = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
         FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, STATE.edges);
         FOLD.Vf = X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0];
@@ -109,13 +111,14 @@ const MAIN = {
     },
     draw_frame: (FILE) => {
         const [F1, C1, S1] = MAIN.get_frame(FILE, FILE.i);
-        MAIN.draw_state(SVG.clear("input"), F1, C1, S1);
-        const out = SVG.clear("output");
         if (FILE.i < FILE.file_frames.length - 1) {
+            const out = SVG.clear("output");
             const [F2, C2, S2] = MAIN.get_frame(FILE, FILE.i + 1);
             MAIN.draw_cp(SVG.clear("cp"), F2);
             MAIN.draw_state(out, F2, C2, S2);
+            MAIN.draw_state(SVG.clear("input"), F1, C1, S1, F2);
         } else {
+            MAIN.draw_state(SVG.clear("input"), F1, C1, S1);
             MAIN.draw_cp(SVG.clear("cp"), F1, false);
         }
     },
@@ -162,7 +165,7 @@ const MAIN = {
         }
         // SVG.draw_points(g3, Vf, {text: true, fill: "green"});
     },
-    draw_state: (svg, FOLD, CELL, STATE) => {
+    draw_state: (svg, FOLD, CELL, STATE, F2) => {
         const {Ff, EF} = FOLD;
         const {P, PP, CP, CF, SP, SC, SE} = CELL;
         const {Ctop, Ccolor, CD, L} = STATE;
@@ -184,6 +187,23 @@ const MAIN = {
         SVG.draw_segments(fold_s_edge, lines, {
             id: true, stroke: MAIN.color.edge.B,
             filter: (i) => SD[i] == "B"});
+        if ((F2 != undefined) && (F2.points != undefined)) {
+            SVG.draw_segments(fold_s_edge, [MAIN.line_2_coords(F2.line)], {
+                id: true, stroke: "purple",
+                stroke_width: 5,
+            });
+            SVG.draw_points(fold_s_edge, M.expand(F2.points, Q),
+                {fill: "green", r: 10}
+            );
+        }
+    },
+    line_2_coords: (line) => {
+        const [u, d] = line;
+        const p = M.mul(u, d);
+        const off = M.mul(M.perp(u), 10);
+        const p1 = M.add(p, off);
+        const p2 = M.sub(p, off);
+        return [p1, p2];
     },
     V_FV_2_FOLD_CELL: (V, FV) => {
         const Ff = MAIN.FV_V_2_Ff(FV, V);
