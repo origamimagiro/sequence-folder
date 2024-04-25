@@ -31,18 +31,18 @@ const MAIN = {
         for (const [k, v] of Object.entries({
             xmlns: SVG.NS,
             style: "background: lightgray",
-            viewBox: [0, 0, 2*s, 2*s].join(" "),
+            viewBox: [0, 0, 3*s, s].join(" "),
         })) {
             main.setAttribute(k, v);
         }
-        for (const [i, id] of ["cp_in", "input", "cp_out", "output"].entries()) {
+        for (const [i, id] of ["input", "cp", "output"].entries()) {
             const svg = document.getElementById(id);
             for (const [k, v] of Object.entries({
                 xmlns: SVG.NS,
                 height: s,
                 width: s,
-                x: (i % 2)*s,
-                y: (i >> 1)*s,
+                x: i*s,
+                y: 0,
                 viewBox: [-b, -b, s + 2*b, s + 2*b].join(" "),
             })) {
                 svg.setAttribute(k, v);
@@ -96,20 +96,22 @@ const MAIN = {
         const STATE = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
         FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, STATE.edges);
         FOLD.Vf = M.normalize_points(
-            X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0]
-        );
+            X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0]);
+        if (M.polygon_area2(M.expand(FOLD.FV[0], FOLD.Vf)) < 0) {
+            FOLD.Vf = FOLD.Vf.map(v => M.add(M.refY(v), [0, 1]));
+        }
         return [FOLD, CELL, STATE];
     },
     draw_frame: (FILE) => {
         const [F1, C1, S1] = MAIN.get_frame(FILE, FILE.i);
         MAIN.draw_state(SVG.clear("input"), F1, C1, S1);
-        MAIN.draw_cp(SVG.clear("cp_in"), F1);
         const out = SVG.clear("output");
-        const cp_out = SVG.clear("cp_out");
         if (FILE.i < FILE.file_frames.length - 1) {
             const [F2, C2, S2] = MAIN.get_frame(FILE, FILE.i + 1);
+            MAIN.draw_cp(SVG.clear("cp"), F2);
             MAIN.draw_state(out, F2, C2, S2);
-            MAIN.draw_cp(cp_out, F2);
+        } else {
+            MAIN.draw_cp(SVG.clear("cp"), F1, false);
         }
     },
     EF_Ff_edges_2_EA: (EF, Ff, edges) => {
@@ -122,7 +124,7 @@ const MAIN = {
             return "F";
         });
     },
-    draw_cp: (svg, F) => {
+    draw_cp: (svg, F, bold = true) => {
         console.log(F);
         const {V, Vf, FV, EV, EF, EA, Ff, FO, FL} = F;
         const faces = FV.map(F => M.expand(F, Vf));
@@ -136,7 +138,8 @@ const MAIN = {
         const g1 = SVG.append("g", svg, {id: "flat_f"});
         SVG.draw_polygons(g1, faces, {fill: "white", id: true});
         const g2 = SVG.append("g", svg, {id: "flat_e"});
-        if (FL == undefined) {
+        const g3 = SVG.append("g", svg, {id: "flat_p"});
+        if ((FL == undefined) || !bold) {
             SVG.draw_segments(g2, lines, {stroke: colors, id: true});
         } else {
             SVG.draw_segments(g2, lines, {stroke: colors, id: true, stroke_width: 1,
@@ -152,6 +155,7 @@ const MAIN = {
                 },
             });
         }
+        SVG.draw_points(g3, Vf, {text: true, fill: "green"});
     },
     draw_state: (svg, FOLD, CELL, STATE) => {
         const {Ff, EF} = FOLD;
