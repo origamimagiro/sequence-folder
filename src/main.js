@@ -83,6 +83,7 @@ const MAIN = {
             FILE.i = Math.max(FILE.i - 1, 0);
             MAIN.draw_frame(FILE);
         };
+        console.log(FILE);
     },
     get_frame: (FILE, i) => {
         const frame = FILE.file_frames[i];
@@ -90,11 +91,13 @@ const MAIN = {
             frame.vertices_coords,
             frame.faces_vertices
         );
+        FOLD.FL = frame["faces_lf:group"];
         FOLD.FO = frame.faceOrders;
         const STATE = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
         FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, STATE.edges);
-        FOLD.Vf = frame["vertices_lf:coords"] ??
-            M.normalize_points(X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0]);
+        FOLD.Vf = M.normalize_points(
+            X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0]
+        );
         return [FOLD, CELL, STATE];
     },
     draw_frame: (FILE) => {
@@ -121,7 +124,7 @@ const MAIN = {
     },
     draw_cp: (svg, F) => {
         console.log(F);
-        const {V, Vf, FV, EV, EF, EA, Ff, FO} = F;
+        const {V, Vf, FV, EV, EF, EA, Ff, FO, FL} = F;
         const faces = FV.map(F => M.expand(F, Vf));
         const lines = EV.map(E => M.expand(E, Vf));
         const colors = EA.map(a => {
@@ -133,7 +136,22 @@ const MAIN = {
         const g1 = SVG.append("g", svg, {id: "flat_f"});
         SVG.draw_polygons(g1, faces, {fill: "white", id: true});
         const g2 = SVG.append("g", svg, {id: "flat_e"});
-        SVG.draw_segments(g2, lines, {stroke: colors, id: true});
+        if (FL == undefined) {
+            SVG.draw_segments(g2, lines, {stroke: colors, id: true});
+        } else {
+            SVG.draw_segments(g2, lines, {stroke: colors, id: true, stroke_width: 1,
+                filter: (i) => {
+                    const [f, g] = EF[i];
+                    return (g == undefined) || (FL[f] == FL[g]);
+                },
+            });
+            SVG.draw_segments(g2, lines, {stroke: colors, id: true, stroke_width: 5,
+                filter: (i) => {
+                    const [f, g] = EF[i];
+                    return (g != undefined) && (FL[f] != FL[g]);
+                },
+            });
+        }
     },
     draw_state: (svg, FOLD, CELL, STATE) => {
         const {Ff, EF} = FOLD;
