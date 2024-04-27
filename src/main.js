@@ -35,7 +35,7 @@ const MAIN = {
         })) {
             main.setAttribute(k, v);
         }
-        for (const [i, id] of ["input", "cp", "output"].entries()) {
+        for (const [i, id] of ["cp", "input", "output"].entries()) {
             const svg = document.getElementById(id);
             for (const [k, v] of Object.entries({
                 xmlns: SVG.NS,
