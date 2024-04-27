@@ -83,6 +83,9 @@ const MAIN = {
             FILE.i = Math.max(FILE.i - 1, 0);
             MAIN.draw_frame(FILE);
         };
+        document.getElementById("flip").onchange = () => {
+            MAIN.draw_frame(FILE);
+        };
         // console.log(FILE);
     },
     get_frame: (FILE, i) => {
@@ -168,8 +171,8 @@ const MAIN = {
     draw_state: (svg, FOLD, CELL, STATE, F2) => {
         const {Ff, EF} = FOLD;
         const {P, PP, CP, CF, SP, SC, SE} = CELL;
-        const {Ctop, Ccolor, CD, L} = STATE;
-        const flip = false; // document.getElementById("flip").checked;
+        const {Ctop, Ccolor, CD, L} = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
+        const flip = document.getElementById("flip").checked;
         const m = [0.5, 0.5];
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const SD = X.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, Ctop);
@@ -188,10 +191,12 @@ const MAIN = {
             id: true, stroke: MAIN.color.edge.B,
             filter: (i) => SD[i] == "B"});
         if ((F2 != undefined) && (F2.points != undefined)) {
-            SVG.draw_segments(fold_s_edge, [MAIN.line_2_coords(F2.line)], {
-                id: true, stroke: "purple",
-                stroke_width: 5,
-            });
+            const line = [MAIN.line_2_coords(F2.line).map(
+                p => flip ? M.add(M.refX(M.sub(p, m)), m): p
+            )];
+            SVG.draw_segments(fold_s_edge, line, {
+                id: true, stroke: "purple", stroke_width: 5,}
+            );
             SVG.draw_points(fold_s_edge, M.expand(F2.points, Q),
                 {fill: "green", r: 10}
             );
@@ -249,7 +254,7 @@ const MAIN = {
         const {EF, Ff, FO} = FOLD;
         const {P, SE, PP, CP, SC, CF, BF} = CELL;
         const m = [0.5, 0.5];
-        const flip = false; // document.getElementById("flip").checked;
+        const flip = document.getElementById("flip").checked;
         const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
         const edges = FO.map(([f1, f2, o]) => {
             return M.encode(((Ff[f2] ? 1 : -1)*o >= 0) ? [f1, f2] : [f2, f1]);
