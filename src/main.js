@@ -12,8 +12,8 @@ const MAIN = {
     color: {
         background: "lightgray",
         face: {
-            top: "gray",
-            bottom: "white",
+            top: "#AAA",
+            bottom: "#FFF",
         },
         edge: {
             U: "black",
