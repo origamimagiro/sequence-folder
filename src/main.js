@@ -35,6 +35,7 @@ const MAIN = {
         })) {
             main.setAttribute(k, v);
         }
+        document.getElementById("shadow").value = 0;
         for (const [i, id] of ["input", "cp", "output"].entries()) {
             const svg = document.getElementById(id);
             for (const [k, v] of Object.entries({
@@ -86,6 +87,9 @@ const MAIN = {
         document.getElementById("flip").onchange = () => {
             MAIN.draw_frame(FILE);
         };
+        document.getElementById("shadow").onchange = () => {
+            MAIN.draw_frame(FILE);
+        };
         // console.log(FILE);
     },
     get_frame: (FILE, i) => {
@@ -98,8 +102,11 @@ const MAIN = {
         FOLD.FO = frame.faceOrders;
         FOLD.line = frame["lf:line"];
         FOLD.points = frame["lf:points"];
-        const STATE = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
-        FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, STATE.edges);
+        const edges = FOLD.FO.map(([f1, f2, o]) => {
+            return M.encode(((FOLD.Ff[f2] ? 1 : -1)*o >= 0) ? [f1, f2] : [f2, f1]);
+        });
+        CELL.CD = X.CF_edges_2_CD(CELL.CF, edges);
+        FOLD.EA = MAIN.EF_Ff_edges_2_EA(FOLD.EF, FOLD.Ff, edges);
         FOLD.Vf = X.V_FV_EV_EA_2_Vf_Ff(FOLD.V, FOLD.FV, FOLD.EV, FOLD.EA)[0];
         if (M.polygon_area2(M.expand(FOLD.FV[0], FOLD.Vf)) < 0) {
             FOLD.Vf = FOLD.Vf.map(v => M.add(M.refY(v), [0, 1]));
@@ -110,18 +117,18 @@ const MAIN = {
         FOLD.Vf = FOLD.Vf.map(p => M.rotate_cos_sin(p, c1, -s1));
         FOLD.Vf = FOLD.Vf.map(p => M.rotate_cos_sin(p, 0, 1));
         FOLD.Vf = M.normalize_points(FOLD.Vf);
-        return [FOLD, CELL, STATE];
+        return [FOLD, CELL];
     },
     draw_frame: (FILE) => {
-        const [F1, C1, S1] = MAIN.get_frame(FILE, FILE.i);
+        const [F1, C1] = MAIN.get_frame(FILE, FILE.i);
         if (FILE.i < FILE.file_frames.length - 1) {
             const out = SVG.clear("output");
-            const [F2, C2, S2] = MAIN.get_frame(FILE, FILE.i + 1);
+            const [F2, C2] = MAIN.get_frame(FILE, FILE.i + 1);
             MAIN.draw_cp(SVG.clear("cp"), F2);
-            MAIN.draw_state(out, F2, C2, S2);
-            MAIN.draw_state(SVG.clear("input"), F1, C1, S1, F2);
+            MAIN.draw_state(out, F2, C2);
+            MAIN.draw_state(SVG.clear("input"), F1, C1, F2);
         } else {
-            MAIN.draw_state(SVG.clear("input"), F1, C1, S1);
+            MAIN.draw_state(SVG.clear("input"), F1, C1);
             MAIN.draw_cp(SVG.clear("cp"), F1, false);
         }
     },
@@ -168,36 +175,47 @@ const MAIN = {
         }
         // SVG.draw_points(g3, Vf, {text: true, fill: "green"});
     },
-    draw_state: (svg, FOLD, CELL, STATE, F2) => {
-        const {Ff, EF} = FOLD;
-        const {P, PP, CP, CF, SP, SC, SE} = CELL;
-        const {Ctop, Ccolor, CD, L} = MAIN.FOLD_CELL_2_STATE(FOLD, CELL);
+    draw_state: (svg, FOLD, CELL, F2) => {
+        const {Ff, EF, FO} = FOLD;
+        const {P, CP, CD} = CELL;
         const flip = document.getElementById("flip").checked;
         const m = [0.5, 0.5];
-        const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
-        const SD = X.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, Ctop);
-        const Q_ = M.normalize_points(Q);
-        const cells = CP.map(V => M.expand(V, Q_));
-        const fold_c = SVG.append("g", svg, {id: "fold_c"});
-        const fold_s_crease = SVG.append("g", svg, {id: "fold_s_crease"});
-        const fold_s_edge = SVG.append("g", svg, {id: "fold_s_edge"});
-        SVG.draw_polygons(fold_c, cells, {
-            id: true, fill: Ccolor, stroke: Ccolor});
-        const lines = SP.map((ps) => M.expand(ps, Q_));
-        SVG.draw_segments(fold_s_crease, lines, {
+        const Q = M.normalize_points(
+            P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p))
+        );
+        const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
+        const [UP, UF, SP, SD] = X.tops_CP_EF_Ff_P_2_UP_UF_SP_SD(Ctop, CP, EF, Ff, Q);
+        const Ucolor = UF.map(d => {
+            if (d == undefined) { return undefined; }
+            if (Ff[d] != flip)  { return MAIN.color.face.top; }
+            else                { return MAIN.color.face.bottom; }
+        });
+        const cells = UP.map(V => M.expand(V, Q));
+        const G = {};
+        for (const id of ["c", "shadow", "s_crease", "s_edge"]) {
+            G[id] = SVG.append("g", svg, {id: `${svg.id}_${id}`});
+        }
+        SVG.draw_polygons(G.c, cells, {
+            id: true, fill: Ucolor, stroke: "none"});
+        const shadow = +document.getElementById("shadow").value;
+        if (shadow > 0) {
+            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, UP, UF, Q, flip, shadow);
+        }
+        const lines = SP.map((ps) => M.expand(ps, Q));
+        SVG.draw_segments(G.s_crease, lines, {
             id: true, stroke: MAIN.color.edge.F,
             filter: (i) => SD[i] == "C"});
-        SVG.draw_segments(fold_s_edge, lines, {
+        SVG.draw_segments(G.s_edge, lines, {
             id: true, stroke: MAIN.color.edge.B,
             filter: (i) => SD[i] == "B"});
         if ((F2 != undefined) && (F2.points != undefined)) {
             const line = [MAIN.line_2_coords(F2.line).map(
                 p => flip ? M.add(M.refX(M.sub(p, m)), m): p
             )];
-            SVG.draw_segments(fold_s_edge, line, {
+            SVG.draw_segments(G.s_edge, line, {
                 id: true, stroke: "purple", stroke_width: 5,}
             );
-            SVG.draw_points(fold_s_edge, M.expand(F2.points, Q),
+            SVG.draw_points(G.s_edge, M.expand(F2.points, Q),
                 {fill: "green", r: 10}
             );
         }
@@ -249,26 +267,6 @@ const MAIN = {
         const FOLD = {V, FV, EV, EF, FE, Ff, eps};
         const CELL = {P, SP, SE, PP, CP, CS, SC, CF, FC, BF};
         return [FOLD, CELL];
-    },
-    FOLD_CELL_2_STATE: (FOLD, CELL) => {
-        const {EF, Ff, FO} = FOLD;
-        const {P, SE, PP, CP, SC, CF, BF} = CELL;
-        const m = [0.5, 0.5];
-        const flip = document.getElementById("flip").checked;
-        const Q = P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
-        const edges = FO.map(([f1, f2, o]) => {
-            return M.encode(((Ff[f2] ? 1 : -1)*o >= 0) ? [f1, f2] : [f2, f1]);
-        });
-        const L = MAIN.linearize(edges, Ff.length);
-        const CD = X.CF_edges_flip_2_CD(CF, edges);
-        const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const Ccolor = Ctop.map(d => {
-            if (d == undefined) { return undefined; }
-            if (Ff[d] != flip)  { return MAIN.color.face.top; }
-            else                { return MAIN.color.face.bottom; }
-        });
-        const SD = X.EF_SE_SC_CF_CD_2_SD(EF, SE, SC, CF, Ctop);
-        return {Q, CD, Ctop, Ccolor, SD, L, edges};
     },
     linearize: (edges, n) => {
         const Adj = Array(n).fill(0).map(() => []);
