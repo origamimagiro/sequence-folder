@@ -20,6 +20,10 @@ const MAIN = {
             F: "lightgray",
             B: "black",
         },
+        rand: [
+            "lightpink", "lightgreen", "lightskyblue", "gold",
+            "lightsalmon", "powderblue", "lavender", "sandybrown"
+        ],
     },
     startup: () => {
         CON.build();
@@ -154,12 +158,15 @@ const MAIN = {
             if (a == "F") { return "gray"; }
         });
         const g1 = SVG.append("g", svg, {id: "flat_f"});
-        SVG.draw_polygons(g1, faces, {fill: "white", id: true});
         const g2 = SVG.append("g", svg, {id: "flat_e"});
         const g3 = SVG.append("g", svg, {id: "flat_p"});
         if ((FL == undefined) || !bold) {
             SVG.draw_segments(g2, lines, {stroke: colors, id: true});
+            SVG.draw_polygons(g1, faces, {fill: "white", id: true});
         } else {
+            const Fc = FL.map(i => (i < 0) ? "white" : (
+                MAIN.color.rand[i % MAIN.color.rand.length]));
+            SVG.draw_polygons(g1, faces, {fill: Fc, id: true});
             SVG.draw_segments(g2, lines, {stroke: colors, id: true, stroke_width: 1,
                 filter: (i) => {
                     const [f, g] = EF[i];
