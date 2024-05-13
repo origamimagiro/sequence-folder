@@ -184,47 +184,45 @@ const MAIN = {
     },
     draw_state: (svg, FOLD, CELL, F2) => {
         const {Ff, EF, FO} = FOLD;
-        const {P, CP, CD} = CELL;
+        const {P, CP, CD, SP, SC, SE} = CELL;
         const flip = document.getElementById("flip").checked;
         const m = [0.5, 0.5];
         const Q = M.normalize_points(
             P.map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p))
         );
         const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
-        const [UP, UF, SP, SD] = X.tops_CP_EF_Ff_P_2_UP_UF_SP_SD(Ctop, CP, EF, Ff, Q);
-        const Ucolor = UF.map(d => {
-            if (d == undefined) { return undefined; }
-            if (Ff[d] != flip)  { return MAIN.color.face.top; }
-            else                { return MAIN.color.face.bottom; }
+        const SD = X.Ctop_SC_SE_EF_Ff_2_SD(Ctop, SC, SE, EF, Ff);
+        const [RP, Rf] = X.Ctop_CP_SC_SD_Ff_P_2_RP_Rf(Ctop, CP, SC, SD, Ff, Q);
+        const Rcolor = Rf.map(f => {
+            if (f == undefined) { return undefined; }
+            return MAIN.color.face[(f != flip) ? "top" : "bottom"];
         });
-        const cells = UP.map(V => M.expand(V, Q));
+        const regions = RP.map(V => M.expand(V, Q));
         const G = {};
         for (const id of ["c", "shadow", "s_crease", "s_edge"]) {
             G[id] = SVG.append("g", svg, {id: `${svg.id}_${id}`});
         }
-        SVG.draw_polygons(G.c, cells, {
-            id: true, fill: Ucolor, stroke: "none"});
-        const shadow = +document.getElementById("shadow").value;
-        if (shadow > 0) {
-            SVG.draw_shadows(G.shadow, cells, EF, Ff, CD, UP, UF, Q, flip, shadow);
-        }
+        SVG.draw_polygons(G.c, regions, {
+            id: true, fill: Rcolor, stroke: "none"});
+        const n = +document.getElementById("shadow").value;
+        if (n > 0) { SVG.draw_shadows(G.shadow, RP, Rf, Q, SP, SD, flip, n); }
         const lines = SP.map((ps) => M.expand(ps, Q));
         SVG.draw_segments(G.s_crease, lines, {
             id: true, stroke: MAIN.color.edge.F,
-            filter: (i) => SD[i] == "C"});
+            filter: (i) => SD[i][0] == "C"});
         SVG.draw_segments(G.s_edge, lines, {
             id: true, stroke: MAIN.color.edge.B,
-            filter: (i) => SD[i] == "B"});
+            filter: (i) => SD[i][0] == "B"});
         if ((F2 != undefined) && (F2.points != undefined)) {
             const line = [MAIN.line_2_coords(F2.line).map(
                 p => flip ? M.add(M.refX(M.sub(p, m)), m): p
             )];
             SVG.draw_segments(G.s_edge, line, {
-                id: true, stroke: "purple", stroke_width: 5,}
-            );
-            SVG.draw_points(G.s_edge, M.expand(F2.points, Q),
-                {fill: "green", r: 10}
-            );
+                id: true, stroke: "purple", stroke_width: 5,
+            });
+            SVG.draw_points(G.s_edge, M.expand(F2.points, Q), {
+                fill: "green", r: 10,
+            });
         }
     },
     line_2_coords: (line) => {
