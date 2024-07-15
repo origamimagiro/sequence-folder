@@ -3,7 +3,6 @@ import { NOTE } from "./flatfolder/note.js";
 import { SVG } from "./flatfolder/svg.js";
 import { IO } from "./flatfolder/io.js";
 import { X } from "./flatfolder/conversion.js";
-import { SOLVER } from "./flatfolder/solver.js";
 import { CON } from "./flatfolder/constraints.js";
 
 window.onload = () => { MAIN.startup(); };  // entry point
@@ -246,11 +245,8 @@ const MAIN = {
         const EV = Array.from(EV_set).sort().map(k => M.decode(k));
         const [EF, FE] = X.EV_FV_2_EF_FE(EV, FV);
         const L = EV.map(vs => vs.map(i => V[i]));
-        const eps = M.min_line_length(L) / M.EPS;
-        NOTE.time(`Using eps ${eps} from min line length ${
-            eps*M.EPS} (factor ${M.EPS})`);
         NOTE.time("Constructing points and segments from edges");
-        const [P, SP, SE] = X.L_2_V_EV_EL(L, eps);
+        const [P, SP, SE, eps_i] = X.L_2_V_EV_EL(L);
         NOTE.annotate(P, "points_coords");
         NOTE.annotate(SP, "segments_points");
         NOTE.annotate(SE, "segments_edges");
@@ -266,11 +262,9 @@ const MAIN = {
         NOTE.lap();
         NOTE.time("Making face-cell maps");
         const [CF, FC] = X.EF_FV_SP_SE_CP_SC_2_CF_FC(EF, FV, SP, SE, CP, SC);
-        const BF = X.CF_2_BF(CF);
-        NOTE.annotate(BF, "variables_faces");
         NOTE.lap();
-        const FOLD = {V, FV, EV, EF, FE, Ff, eps};
-        const CELL = {P, SP, SE, PP, CP, CS, SC, CF, FC, BF};
+        const FOLD = {V, FV, EV, EF, FE, Ff};
+        const CELL = {P, SP, SE, PP, CP, CS, SC, CF, FC};
         return [FOLD, CELL];
     },
     linearize: (edges, n) => {
