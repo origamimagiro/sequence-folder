@@ -78,13 +78,14 @@ const MAIN = {
             return;
         }
         FILE.i = 0;
+        document.getElementById("controls").style.display = "inline";
         MAIN.draw_frame(FILE);
-        document.getElementById("next").onclick = () => {
-            FILE.i = Math.min(FILE.i + 1, FILE.file_frames.length - 2);
-            MAIN.draw_frame(FILE);
-        };
-        document.getElementById("prev").onclick = () => {
-            FILE.i = Math.max(FILE.i - 1, 0);
+        const step_input = document.getElementById("step");
+        step_input.value = 0;
+        step_input.setAttribute("min", 0);
+        step_input.setAttribute("max", FILE.file_frames.length - 2);
+        step_input.onchange = () => {
+            FILE.i = +step_input.value;
             MAIN.draw_frame(FILE);
         };
         document.getElementById("flip").onchange = () => {
@@ -219,9 +220,9 @@ const MAIN = {
             SVG.draw_segments(G.s_edge, line, {
                 id: true, stroke: "purple", stroke_width: 5,
             });
-            SVG.draw_points(G.s_edge, M.expand(F2.points, Q), {
-                fill: "green", r: 10,
-            });
+            // SVG.draw_points(G.s_edge, M.expand(F2.points, Q), {
+            //     fill: "green", r: 10,
+            // });
         }
     },
     line_2_coords: (line) => {

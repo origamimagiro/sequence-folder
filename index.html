@@ -9,12 +9,14 @@
         <span style="font-family:sans-serif">
             <b>Sequence-Folder&nbsp;&nbsp;</b>
         </span>
-        <input type="button" id="prev" value="<">
-        <input type="button" id="next" value=">">
-        <label for="flip">Flip</label>
-        <input type="checkbox" id="flip">
-        <label for="shadow">Shadows</label>
-        <input id="shadow" type="number" min="0" max="6" step="1">
+        <div id="controls" style="display:none">
+            <label for="step">Step</label>
+            <input id="step" type="number"></input>
+            <label for="flip">Flip</label>
+            <input type="checkbox" id="flip">
+            <label for="shadow">Shadows</label>
+            <input id="shadow" type="number" min="0" max="6" step="1">
+        </div>
         <input type="file" id="import"/>
     </div>
     <div>
