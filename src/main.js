@@ -220,9 +220,9 @@ const MAIN = {
             SVG.draw_segments(G.s_edge, line, {
                 id: true, stroke: "purple", stroke_width: 5,
             });
-            // SVG.draw_points(G.s_edge, M.expand(F2.points, Q), {
-            //     fill: "green", r: 10,
-            // });
+            SVG.draw_points(G.s_edge, M.expand(F2.points, Q), {
+                fill: "green", r: 10,
+            });
         }
     },
     line_2_coords: (line) => {
