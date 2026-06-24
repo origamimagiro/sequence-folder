@@ -120,7 +120,7 @@ const MAIN = {
         const [c1, s1] = FOLD.Vf[1];
         FOLD.Vf = FOLD.Vf.map(p => M.rotate_cos_sin(p, c1, -s1));
         FOLD.Vf = FOLD.Vf.map(p => M.rotate_cos_sin(p, 0, 1));
-        FOLD.Vf = MAIN.V_P_transform(FOLD.Vf, FOLD.Vf);
+        FOLD.Vf = MAIN.V_P_transform(FOLD.Vf, FOLD.Vf, false);
         return [FOLD, CELL];
     },
     draw_frame: (FILE) => {
@@ -186,7 +186,7 @@ const MAIN = {
         const {Ff, EF, FO} = FOLD;
         const {P, CP, CD, SP, SC, SE} = CELL;
         const flip = document.getElementById("flip").checked;
-        const Q = MAIN.V_P_transform(P, P);
+        const Q = MAIN.V_P_transform(P, P, flip);
         const Ctop = CD.map(S => flip ? S[0] : S[S.length - 1]);
         const SD = X.Ctop_SC_SE_EF_Ff_2_SD(Ctop, SC, SE, EF, Ff);
         const [RP, Rf] = X.Ctop_CP_SC_SD_Ff_P_2_RP_Rf(Ctop, CP, SC, SD, Ff, Q);
@@ -211,7 +211,7 @@ const MAIN = {
             id: true, stroke: MAIN.color.edge.B,
             filter: (i) => SD[i][0] == "B"});
         if ((F2 != undefined) && (F2.points != undefined)) {
-            const line = [MAIN.V_P_transform(MAIN.line_2_coords(F2.line), P)];
+            const line = [MAIN.V_P_transform(MAIN.line_2_coords(F2.line), P, flip)];
             SVG.draw_segments(G.s_edge, line, {
                 id: true, stroke: "purple", stroke_width: 5,
             });
@@ -324,7 +324,7 @@ const MAIN = {
         return layers;
     },
     FV_V_2_Ff: (FV, V) => FV.map(fV => (M.polygon_area2(fV.map(i => V[i])) < 0)),
-    V_P_transform: (V, P) => {
+    V_P_transform: (V, P, flip) => {
         // rescales V based on normalizing P into a [0, 1] bounding box
         const [p_min, p_max] = M.bounding_box(P);
         const [x_diff, y_diff] = M.sub(p_max, p_min);
@@ -332,7 +332,6 @@ const MAIN = {
         const diff = is_tall ? y_diff : x_diff;
         const m = [0.5, 0.5];
         const off = M.sub(m, M.div([x_diff, y_diff], 2*diff));
-        const flip = document.getElementById("flip").checked;
         return V.map(p => M.add(M.div(M.sub(p, p_min), diff), off))
                 .map(p => (flip ? M.add(M.refX(M.sub(p, m)), m) : p));
     },
